@@ -47,11 +47,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     currentSession = settings.value("currentSession", "default").toString();
     
     // Add toolbar actions.
-    QAction* addTopicAction = ui->mainToolBar->addAction("New topic", this, SLOT(addTopic()));
-    QAction* addDiscoveryAction = ui->mainToolBar->addAction("New discovery", this, SLOT(addDiscovery()));
-    //addTopicAction->setEnabled(false);
-    //addDiscoveryAction->setEnabled(false);
-    ui->mainToolBar->setDisabled(true);
+    connect(ui->actionNewTopic, SIGNAL(triggered()), this, SLOT(addTopic()));
+    connect(ui->actionNewDiscovery, SIGNAL(triggered()), this, SLOT(addDiscovery()));
+    ui->actionNewTopic->setEnabled(false);
+    ui->actionNewDiscovery->setEnabled(false);
     
     // Disable menu options which should be unavailable.
     ui->actionConnect->setEnabled(true);
@@ -214,7 +213,8 @@ void MainWindow::disconnectRemote() {
     ui->actionDisconnect->setEnabled(false);
     //addTopicAction->setDisabled(true);
     //addDiscoveryAction->setEnabled(false);
-    ui->mainToolBar->setDisabled(true);
+    ui->actionNewTopic->setEnabled(false);
+    ui->actionNewDiscovery->setEnabled(false);
     
     mqtt->disconnectBroker();
 }
@@ -230,7 +230,8 @@ void MainWindow::remoteConnected() {
     ui->actionDisconnect->setEnabled(true);
 //    addTopicAction->setDisabled(false);
 //    addDiscoveryAction->setEnabled(true);
-    ui->mainToolBar->setEnabled(true);
+    ui->actionNewTopic->setEnabled(true);
+    ui->actionNewDiscovery->setEnabled(true);
 }
 
 
@@ -481,28 +482,31 @@ void MainWindow::updatedSession(Session s, bool newSession) {
 void MainWindow::addTopic() {
     QString topic = QInputDialog::getText(this, tr("Name of topic"), 
                                            tr("MQTT topic to add"));
-    
-    if (topic.isEmpty()) { return; }
-    
+    addTopic(topic.toStdString());
+}
+
+void MainWindow::addTopic(string topic) {
+    if (topic.empty()) { return; }
+
     // Check that we don't already have this topic.
     map<string, TopicWindow*>::const_iterator it;
-	it = topicwindows.find(topic.toStdString());
-	if (it != topicwindows.end()) {
-		QMessageBox::warning(this, tr("Existing topic"), tr("The selected topic already exists."));
-		return;
-	}
-    
-    // Open a new window in the MDI for this topic.    
+    it = topicwindows.find(topic);
+    if (it != topicwindows.end()) {
+        QMessageBox::warning(this, tr("Existing topic"), tr("The selected topic already exists."));
+        return;
+    }
+
+    // Open a new window in the MDI for this topic.
     TopicWindow* tw = new TopicWindow(this);
-    tw->setTopic(topic);
-    topicwindows.insert(std::pair<string, TopicWindow*>(topic.toStdString(), tw));
-    
+    tw->setTopic(QString::fromStdString(topic));
+    topicwindows.insert(std::pair<string, TopicWindow*>(topic, tw));
+
     // Add connections.
     connect(tw, SIGNAL(newMessage(string,string)), this, SLOT(publishMessage(string,string)));
     connect(tw, SIGNAL(addSubscription(string)), this, SLOT(addSubscription(string)));
     connect(tw, SIGNAL(removeSubscription(string)), this, SLOT(removeSubscription(string)));
     connect(tw, SIGNAL(windowClosing(string)), this, SLOT(windowClosing(string)));
-            
+
     QMdiSubWindow* sw = ui->mdiArea->addSubWindow(tw);
     sw->show();
 }
@@ -541,6 +545,7 @@ void MainWindow::addDiscovery() {
     connect(dw, SIGNAL(addSubscription(string)), this, SLOT(addSubscription(string)));
     connect(dw, SIGNAL(removeSubscription(string)), this, SLOT(removeSubscription(string)));
     connect(dw, SIGNAL(windowClosing(string)), this, SLOT(windowClosing(string)));
+    connect(dw, SIGNAL(topicSelected(string)), this, SLOT(addTopic(string)));
             
     QMdiSubWindow* sw = ui->mdiArea->addSubWindow(dw);
     sw->show();

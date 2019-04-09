@@ -32,6 +32,7 @@ private slots:
     void subscriptionStatus(bool status);
 	void clearText();
 	void on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
+	void on_tableWidget_cellDoubleClicked(int row, int column);
 
 public slots:
     void receiveMessage(string topic, string);

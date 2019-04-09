@@ -40,6 +40,7 @@ private slots:
     void disconnectRemote();
     void remoteConnected();
     void addTopic();
+    void addTopic(string topic);
     void addDiscovery();
     void publishMessage(string topic, string message);
     void receiveMessage(string topic, string message);

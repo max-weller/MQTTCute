@@ -90,3 +90,7 @@ void DiscoveryWindow::on_tableWidget_currentCellChanged(int currentRow, int curr
 	ui->zoomTextEdit->setText(message);
 }
 
+void DiscoveryWindow::on_tableWidget_cellDoubleClicked(int row, int column) {
+	QString topic = ui->tableWidget->item(row, 0)->text();
+	emit topicSelected(topic.toStdString());
+}
