@@ -31,7 +31,8 @@ private:
 private slots:
     void subscriptionStatus(bool status);
 	void clearText();
-    
+	void on_tableWidget_currentCellChanged(int currentRow, int currentColumn, int previousRow, int previousColumn);
+
 public slots:
     void receiveMessage(string topic, string);
     
